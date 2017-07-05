@@ -1,0 +1,13 @@
+
+Consumer ID     22
+Application Type    Web
+Application Name    Lovemoney
+User redirect URL   
+Developer Email     xavier.detant@gmail.com
+App Description     Lovemoney hackathon
+Consumer Key    nedlqyjjmzjpv1w1hkfbksei1forisndh3p1et2w
+Consumer Secret     0mh1c1kneycrp0zfxdstrerbs5ixvgothxf5tjnn
+OAuth Endpoint  https://socgen2-k-api.openbankproject.com/oauth/initiate
+OAuth Documentation     How to use OAuth for OpenBankProject
+Direct Login Endpoint   https://socgen2-k-api.openbankproject.com/my/logins/direct
+Direct Login Documentation  How to use Direct Login
