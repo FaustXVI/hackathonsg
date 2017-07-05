@@ -1,4 +1,7 @@
+var $http = require('request-promise');
+
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
 var bankUrl = 'https://socgen2-k-api.openbankproject.com';
 var bankUrlVersioned = bankUrl + '/obp/v3.0.0';
 var consumerId = 'nedlqyjjmzjpv1w1hkfbksei1forisndh3p1et2w';
@@ -16,8 +19,6 @@ var credentialsOf = function (name) {
 };
 
 
-var rp = require('request-promise');
-
 
 
 var getTokenForUser = function (login, password) {
@@ -31,7 +32,7 @@ var getTokenForUser = function (login, password) {
             ' username="' + login + '",password="' + password + '",consumer_key="' + consumerId + '"'
         }
     };
-    return rp(options).then(function (r) {
+    return $http(options).then(function (r) {
         return r.token;
     });
 };
@@ -51,9 +52,23 @@ var accountsFor = function (name) {
                 json: true,
                 headers: headersFor(t)
             };
-            return rp(options).then(function (r) {
+            return $http(options).then(function (r) {
                 return r;
             });
         });
 };
-export {getTokenForUser, headersFor, accountsFor, credentialsOf}
+var transferMoney = function (transfer) {
+    return accountsFor(transfer.to).then(function (accounts) {
+        let account = accounts[0];
+        var options = {
+            method: 'POST',
+            uri: bankUrlVersioned + '/banks/00100/accounts/ACCOUNT_ID/VIEW_ID/transaction-request-types/TRANSACTION_REQUEST_TYPE/transaction-requests',
+            body: {
+                "to": {"bank_id": account.id, "account_id": account.bank_id},
+                "value": {"currency": "EUR", "amount": "10"},
+                "description": "Good"
+            }
+        }
+    });
+};
+export {getTokenForUser, headersFor, accountsFor, credentialsOf, transferMoney}
