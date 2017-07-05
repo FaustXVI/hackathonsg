@@ -12,7 +12,15 @@ describe('Love money', () => {
             credentialsOf("jeremy").should.deep.equal({
                 'login': "1000203892",
                 'password': "123456"
-            })
+            });
+        });
+    });
+    describe('for xavier', () => {
+        it('should be user 4', () => {
+            credentialsOf("xavier").should.deep.equal({
+                'login': "1000203894",
+                'password': "123456"
+            });
         });
     });
     it('should get tokens for user', () => {

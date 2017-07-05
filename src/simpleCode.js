@@ -1,8 +1,25 @@
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 var bankUrl = 'https://socgen2-k-api.openbankproject.com';
-var bankUrlVersioned = bankUrl+'/obp/v3.0.0';
+var bankUrlVersioned = bankUrl + '/obp/v3.0.0';
 var consumerId = 'nedlqyjjmzjpv1w1hkfbksei1forisndh3p1et2w';
+var credentialsOf = function (name) {
+    return {
+        'jeremy': {
+            'login': "1000203892",
+            'password': "123456"
+        },
+        'xavier': {
+            'login': "1000203894",
+            'password': "123456"
+        }
+    }[name];
+};
+
+
 var rp = require('request-promise');
+
+
+
 var getTokenForUser = function (login, password) {
     var options = {
         method: 'POST',
@@ -24,8 +41,9 @@ var headersFor = function (token) {
         'Authorization': 'DirectLogin token="' + token + '"'
     }
 };
-var accountsFor = function () {
-    return getTokenForUser("1000203892", "123456")
+var accountsFor = function (name) {
+    var credentials = credentialsOf(name);
+    return getTokenForUser(credentials.login, credentials.password)
         .then(function (t) {
             var options = {
                 method: 'GET',
@@ -38,10 +56,4 @@ var accountsFor = function () {
             });
         });
 };
-var credentialsOf = function () {
-    return {
-        'login': "1000203892",
-        'password': "123456"
-    };
-};
-export {getTokenForUser, headersFor, accountsFor,credentialsOf}
+export {getTokenForUser, headersFor, accountsFor, credentialsOf}
