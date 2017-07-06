@@ -70,7 +70,7 @@ var transfer = function (u1, u2, amount) {
         })
         .then(function (r) {
             var a1 = r;
-            return accountsFor(u2).then(function (r) {
+            return accountsFor("xavier").then(function (r) {
                 return {
                     from: a1,
                     to: r[0],
