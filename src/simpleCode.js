@@ -89,7 +89,7 @@ var transfer = function (u1, u2, amount) {
                         body: {
                             "to": {"bank_id": v.to.bank_id, "account_id": v.to.id},
                             "value": {"currency": v.from.balance.currency, "amount": v.amount},
-                            "description": "Good"
+                            "description": "Love money transfert to " + u2
                         }
                     };
 
@@ -100,9 +100,6 @@ var transfer = function (u1, u2, amount) {
 
         });
 };
-
-
-
 
 
 var rp = require('request-promise');
