@@ -1,4 +1,12 @@
+var rp = require('request-promise');
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
+
+
+
+
+
+
 var bankUrl = 'https://socgen2-k-api.openbankproject.com';
 var bankUrlVersioned = bankUrl + '/obp/v3.0.0';
 var consumerId = 'nedlqyjjmzjpv1w1hkfbksei1forisndh3p1et2w';
@@ -14,10 +22,6 @@ var credentialsOf = function (name) {
         }
     }[name];
 };
-
-
-var rp = require('request-promise');
-
 
 var getTokenForUser = function (login, password) {
     var options = {
@@ -105,4 +109,10 @@ var transfer = function (u1, u2, amount) {
 
         });
 };
+
+
+
+
+
+
 export {getTokenForUser, headersFor, accountsFor, credentialsOf, transfer}
