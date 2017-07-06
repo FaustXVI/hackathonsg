@@ -13,75 +13,6 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
 
     var PAGE_ACCESS_TOKEN = 'EAAKXJg8OqAIBAAowbyEx6IusozpNMOhZBA7P6QnrdvBKidR0p0ZB1ZCQOp4xmOzEta0zThOchTp1ZBjqByHI5A6ZCi8PS48IVSS4XWncw7tvGysbAQw3Y4DYbD8LaBvjvUjZAxNKxR2rIfV6R7g5WfzdwZAULmyATzIZCW7x25XchcpWN0f8WxQy';
 
-    var bankUrl = 'https://socgen2-k-api.openbankproject.com';
-    var bankUrlVersioned = bankUrl + '/obp/v3.0.0';
-    var consumerId = 'nedlqyjjmzjpv1w1hkfbksei1forisndh3p1et2w';
-    var credentialsOf = function(name) {
-        return {
-            '@jeremy': {
-                'login': "1000203892",
-                'password': "123456"
-            },
-            '@xavier': {
-                'login': "1000203894",
-                'password': "123456"
-            }
-        }[name];
-    };
-
-    function getTokenForUser(login, password) {
-        return $http({
-            method: "POST",
-            url: bankUrl + '/my/logins/direct',
-            params: {
-                "access_token": PAGE_ACCESS_TOKEN
-            },
-            headers: {
-                'content-type': 'application/json',
-                'Authorization': 'DirectLogin' +
-                    ' username="' + login + '",password="' + password + '",consumer_key="' + consumerId + '"'
-            }
-        });
-    };
-
-    function headersFor(token) {
-        return {
-            'Content-Type': 'application/json',
-            'Authorization': 'DirectLogin token="' + token + '"'
-        }
-    };
-
-    function accountsFor(name) {
-        var credentials = credentialsOf(name);
-        var token = getTokenForUser(credentials.login, credentials.password);
-        return $http({
-            method: "GET",
-            url: bankUrlVersioned + '/my/accounts',
-            headers: headersFor(token)
-        });
-    };
-
-    function transferMoney(transfer) {
-        var accounts = accountsFor(transfer.to);
-        var account = accounts[0];
-        return $http({
-            method: "POST",
-            url: bankUrlVersioned + '/banks/00100/accounts/ACCOUNT_ID/VIEW_ID/transaction-request-types/TRANSACTION_REQUEST_TYPE/transaction-requests',
-            data: {
-                "to": {
-                    "bank_id": account.id,
-                    "account_id": account.bank_id
-                },
-                "value": {
-                    "currency": "EUR",
-                    "amount": "10"
-                },
-                "description": "Good"
-            },
-            headers: headersFor(token)
-        });
-    };
-
     console.log({
         "FBMessengerBot start": request
     });
@@ -104,9 +35,8 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
 
         var data = request.body;
         if (data.object == 'page') {
-            sendSetWelcomeMessage();
             sendGetStartedButton();
-
+            sendSetWelcomeMessage();
             // Iterate over each entry
             // There may be multiple if batched
             data.entry.forEach(function(pageEntry) {
@@ -220,7 +150,6 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
                     };
                     callSendAPI(error);
                 } else {
-                    //var accounts = accountsFor(friendId);
                     var messageData = {
                         recipient: {
                             id: senderID
@@ -232,17 +161,22 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
                                 payload: {
                                     template_type: "generic",
                                     elements: [{
-                                        title: "Need your approbation",
-                                        subtitle: "I will transfer " + amount + " to " + friendId + "'s account. This amount will be debited from yours.",
+                                        title: "Choose your payment option",
+                                        subtitle: "To be able to transfer " + amount + " to " + friendId + "'s account. I need to know your payment option.",
                                         buttons: [{
                                                type: "postback",
-                                                title: "Accept",
-                                                payload: "The payment of " + amount + " to " + friendId + " is done."
+                                                title: "Right now",
+                                                payload: "Make a payment now of " + amount + " to " + friendId + " ."
                                             },
                                             {
                                                 type: "postback",
-                                                title: "Decline",
-                                                payload: "The payment of " + amount + " to " + friendId + " has been refused"
+                                                title: "Later",
+                                                payload: "Make a payment later of " + amount + " to " + friendId + " ."
+                                            },
+                                            {
+                                                type: "postback",
+                                                title: "Plan",
+                                                payload: "Choose a payment plan for " + amount + " to " + friendId + " ."
                                             }
                                         ],
                                     }]
@@ -317,7 +251,50 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
                 };
                 callSendAPI(response);
                 return;
+        }
+        
+        if (payload.toLowerCase().indexOf("plan") !== -1) {
+                var friendId = payload.match(/@.*\s/g);
+                var amount = payload.match(/(\d+(?:\.\d{1,2})?)[€]/g);
+                
+                var messageData = {
+                        recipient: {
+                            id: senderID
+
+                        },
+                        message: {
+                            attachment: {
+                                type: "template",
+                                payload: {
+                                    template_type: "generic",
+                                    elements: [{
+                                        title: "Choose your plan",
+                                        subtitle: "I can propose to you the following plans.",
+                                        buttons: [{
+                                               type: "postback",
+                                                title: "2 x ",// + amount.split("€")[0]/2 + "€",
+                                                payload: "Transaction of " + amount + " to " + friendId + " in 2times."
+                                            },
+                                            {
+                                                type: "postback",
+                                                title: "3 x ",// + amount.split("€")[0]/3 + "€",
+                                                payload: "Transaction of " + amount + " to " + friendId + " in 3times."
+                                            },
+                                            {
+                                                type: "postback",
+                                                title: "4 x ",// + amount.split("€")[0]/4 + "€",
+                                                payload: "Transaction of " + amount + " to " + friendId + " in 4times"
+                                            }
+                                        ],
+                                    }]
+                                }
+                            }
+                        }
+                    };
+                    callSendAPI(messageData);
+                    return;
             }
+            
       
       console.log("Received postback for user " + senderID + " and page " + recipientID + "with payload '" + payload + "' " + 
         "at " + timeOfPostback);
