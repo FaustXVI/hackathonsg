@@ -232,12 +232,12 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
     }
     
     //Do transaction
-    function callTransactionAPI(amount) {
+    function callTransactionAPI(amount, to) {
         try {
 
             var response = $http({
                 method: 'GET',
-                url: "https://api.backand.com/1/objects/action/items/?name=transfert&parameters={'u1':'jeremy','u2':'xavier','amount':" + amount + "}",
+                url: "https://api.backand.com/1/objects/action/items/?name=transfert&parameters={'u1':'jeremy','u2':'" + to.trim() + "','amount':" + amount + "}",
                 headers: {
                     "Authorization":userProfile.token
                 }
@@ -295,17 +295,17 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
                                         buttons: [{
                                                type: "postback",
                                                 title: "2 x " + parseInt(amount/2).toFixed(2)+ "€",
-                                                payload: "Transaction of " + amount + " to " + friendId + " ."
+                                                payload: "Transaction of " + parseInt(amount/2).toFixed(2) + " to " + friendId + " ."
                                             },
                                             {
                                                 type: "postback",
                                                 title: "3 x " + parseInt(amount/3).toFixed(2) + "€",
-                                                payload: "Transaction of " + amount + " to " + friendId + " ."
+                                                payload: "Transaction of " + parseInt(amount/3).toFixed(2) + " to " + friendId + " ."
                                             },
                                             {
                                                 type: "postback",
                                                 title: "4 x " + parseInt(amount/4).toFixed(2) + "€",
-                                                payload: "Transaction of " + amount + " to " + friendId + " ."
+                                                payload: "Transaction of " + parseInt(amount/4).toFixed(2) + " to " + friendId + " ."
                                             }
                                         ],
                                     }]
@@ -363,7 +363,7 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
                 var friendId = payload.match(/@.*\s/g);
                 var amount = payload.match(/(\d+(?:\.\d{1,2})?)/);
                 
-                var response = callTransactionAPI(amount[0]);
+                var response = callTransactionAPI(amount[0], friendId[0]);
                 
                 var messageData = {
             recipient: {
