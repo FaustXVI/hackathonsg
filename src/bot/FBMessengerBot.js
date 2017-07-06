@@ -360,55 +360,135 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
         }
 
         if (payload.toUpperCase().indexOf("PAYMENT_INIT") !== -1) {
+            
+            var friendId = payload.match(/@.*\s/g);
+            var amount = payload.match(/(\d+(?:\.\d{1,2})?)/);
+            var freq = payload.match(/.FREQ.*$/g)
+            
+            var messageData = {
+                        recipient: {
+                            id: senderID
+
+                        },
+                        message: {
+                            attachment: {
+                                type: "template",
+                                payload: {
+                                    template_type: "generic",
+                                    elements: [{
+                                        title: "Need your approbation",
+                                        subtitle: "I will transfer " + amount + "€ to " + friendId[0] + "'s account periodically. This amount will be debited from yours.",
+                                        buttons: [{
+                                               type: "postback",
+                                                title: "Accept",
+                                                payload: "DO_PAYMENT of " + amount + " to " + friendId + " in" + freq
+                                            },
+                                            {
+                                                type: "postback",
+                                                title: "Decline",
+                                                payload: "The payment of " + amount + " to " + friendId + " has been refused"
+                                            }
+                                        ],
+                                    }]
+                                }
+                            }
+                        }
+                    };
+                    callSendAPI(messageData);
+                    return;
+        }
+        
+        if (payload.toUpperCase().indexOf("DO_PAYMENT") !== -1) {
             var friendId = payload.match(/@.*\s/g);
             var amount = payload.match(/(\d+(?:\.\d{1,2})?)/);
             var freq = payload.match(/.FREQ.*$/g)
 
             var response = callTransactionAPI(amount[0], friendId[0]);
 
+            var receipt = {
+                "type": "template",
+                "payload": {
+                    "sharable": true,
+                    "template_type": "receipt",
+                    "recipient_name": friendId[0],
+                    "order_number": response.id,
+                    "currency": "EUR",
+                    "payment_method": freq[0],
+                    "elements": [{
+                        "title": response.details.description,
+                        "subtitle": response.details.to.account_id,
+                        "quantity": 1,
+                        "price": response.details.value.amount,
+                        "currency": "EUR",
+                        "image_url": "https://scontent-cdt1-1.xx.fbcdn.net/v/t1.0-9/19732268_317808045341443_8968788765722453500_n.png?oh=7db3f6b701757025025a3330156ce565&oe=5A034320"
+                    }, ],
+                    "address": {
+                        "street_1": "Les dunes",
+                        "street_2": "",
+                        "city": "VDF",
+                        "postal_code": "94000",
+                        "state": "IDF",
+                        "country": "France"
+                    },
+                    "summary": {
+                        "subtotal": response.details.value.amount,
+                        "shipping_cost": 0,
+                        "total_tax": 0,
+                        "total_cost": response.details.value.amount
+                    }
+                }
+            }
+
             var messageData = {
                 recipient: {
                     id: senderID
                 },
                 message: {
+                    attachment: receipt
+                }
+            };
+
+            var sharedMessage = {
+                recipient: {
+                    id: senderID
+
+                },
+                message: {
                     attachment: {
-                        "type": "template",
-                        "payload": {
-                            "sharable": true,
-                            "template_type": "receipt",
-                            "recipient_name": friendId[0],
-                            "order_number": response.id,
-                            "currency": "EUR",
-                            "payment_method": freq[0],
-                            "elements": [{
-                                "title": response.details.description,
-                                "subtitle": response.details.to.account_id,
-                                "quantity": 1,
-                                "price": response.details.value.amount,
-                                "currency": "EUR",
-                                "image_url": "https://scontent-cdt1-1.xx.fbcdn.net/v/t1.0-9/19732268_317808045341443_8968788765722453500_n.png?oh=7db3f6b701757025025a3330156ce565&oe=5A034320"
-                            }, ],
-                            "address": {
-                                "street_1": "Les dunes",
-                                "street_2": "",
-                                "city": "VDF",
-                                "postal_code": "94000",
-                                "state": "IDF",
-                                "country": "France"
-                            },
-                            "summary": {
-                                "subtotal": response.details.value.amount,
-                                "shipping_cost": 0,
-                                "total_tax": 0,
-                                "total_cost": response.details.value.amount
-                            }
+                        type: "template",
+                        payload: {
+                            template_type: "generic",
+                            elements: [{
+                                title: "Share your receipt with " + friendId[0],
+                                subtitle: "Just click on the share button.",
+                                "buttons": [{
+                                    "type": "element_share",
+                                    "share_contents": {
+                                        "attachment": {
+                                            "type": "template",
+                                            "payload": {
+                                                "template_type": "generic",
+                                                "elements": [{
+                                                    "title": "Transfer N°: " + response.id,
+                                                    "subtitle": "Amount: " + response.details.value.amount + "€",
+                                                    "buttons": [{
+                                                        "type": "web_url",
+                                                        "url": "http://particuliers.societegenerale.fr",
+                                                        "title": "Transaction details"
+                                                    }]
+                                                }]
+                                            }
+                                        }
+                                    }
+                                }],
+                            }]
                         }
                     }
                 }
             };
 
             callSendAPI(messageData);
-
+            callSendAPI(sharedMessage)
             return;
         }
 
