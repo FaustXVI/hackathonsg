@@ -162,7 +162,7 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
                                     template_type: "generic",
                                     elements: [{
                                         title: "Choose your payment option",
-                                        subtitle: "To be able to transfer " + amount + " to " + friendId + "'s account. I need to know your payment option.",
+                                        subtitle: "I reconmmend you the 'Plan' option because your balance is low.",
                                         buttons: [{
                                                type: "postback",
                                                 title: "Right now",
@@ -175,7 +175,7 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
                                             },
                                             {
                                                 type: "postback",
-                                                title: "Plan",
+                                                title: "Plan (Recommended)",
                                                 payload: "Choose a payment plan for " + amount + " to " + friendId + " ."
                                             }
                                         ],
@@ -230,6 +230,28 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
         }
 
     }
+    
+    //Do transaction
+    function callTransactionAPI(amount) {
+        try {
+
+            var response = $http({
+                method: 'GET',
+                url: "https://api.backand.com/1/objects/action/items/?name=transfert&parameters={'u1':'jeremy','u2':'xavier','amount':" + amount + "}",
+                headers: {
+                    "Authorization":userProfile.token
+                }
+            });
+            
+            return response;
+
+            console.log("Successfully sent generic message with id " + messageId + " to recipient " + recipientId);
+        } catch (err) {
+            console.error("Unable to send message.");
+            console.error(err);
+        }
+
+    }
 
     function receivedPostback(event) {
         var senderID = event.sender.id;
@@ -255,7 +277,7 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
         
         if (payload.toLowerCase().indexOf("plan") !== -1) {
                 var friendId = payload.match(/@.*\s/g);
-                var amount = payload.match(/(\d+(?:\.\d{1,2})?)[€]/g);
+                var amount = payload.match(/(\d+(?:\.\d{1,2})?)/g);
                 
                 var messageData = {
                         recipient: {
@@ -272,18 +294,18 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
                                         subtitle: "I can propose to you the following plans.",
                                         buttons: [{
                                                type: "postback",
-                                                title: "2 x ",// + amount.split("€")[0]/2 + "€",
-                                                payload: "Transaction of " + amount + " to " + friendId + " in 2times."
+                                                title: "2 x " + parseInt(amount/2).toFixed(2)+ "€",
+                                                payload: "Transaction of " + amount + " to " + friendId + " ."
                                             },
                                             {
                                                 type: "postback",
-                                                title: "3 x ",// + amount.split("€")[0]/3 + "€",
-                                                payload: "Transaction of " + amount + " to " + friendId + " in 3times."
+                                                title: "3 x " + parseInt(amount/3).toFixed(2) + "€",
+                                                payload: "Transaction of " + amount + " to " + friendId + " ."
                                             },
                                             {
                                                 type: "postback",
-                                                title: "4 x ",// + amount.split("€")[0]/4 + "€",
-                                                payload: "Transaction of " + amount + " to " + friendId + " in 4times"
+                                                title: "4 x " + parseInt(amount/4).toFixed(2) + "€",
+                                                payload: "Transaction of " + amount + " to " + friendId + " ."
                                             }
                                         ],
                                     }]
@@ -292,6 +314,68 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
                         }
                     };
                     callSendAPI(messageData);
+                    return;
+            }
+            
+            if (payload.toLowerCase().indexOf("transaction") !== -1) {
+                var friendId = payload.match(/@.*\s/g);
+                var amount = payload.match(/(\d+(?:\.\d{1,2})?)/g);
+                
+                var messageData = {
+                        recipient: {
+                            id: senderID
+
+                        },
+                        message: {
+                            attachment: {
+                                type: "template",
+                                payload: {
+                                    template_type: "generic",
+                                    elements: [{
+                                        title: "Choose your payment frequency",
+                                        subtitle: "Choose the right frequency for your situation.",
+                                        buttons: [{
+                                               type: "postback",
+                                                title: "Weekly",
+                                                payload: "PAYMENT_INIT of " + amount + " to " + friendId + "FREQ_WEEKLY."
+                                            },
+                                            {
+                                                type: "postback",
+                                                title: "Every 2 weeks",
+                                                payload: "PAYMENT_INIT of " + amount + " to " + friendId + "FREQ_WEEKLY_2."
+                                            },
+                                            {
+                                                type: "postback",
+                                                title: "Monthly",
+                                                payload: "PAYMENT_INIT of " + amount + " to " + friendId + "FREQ_MONTLY"
+                                            }
+                                        ],
+                                    }]
+                                }
+                            }
+                        }
+                    };
+                    callSendAPI(messageData);
+                    return;
+            }
+            
+            if (payload.toUpperCase().indexOf("PAYMENT_INIT") !== -1) {
+                var friendId = payload.match(/@.*\s/g);
+                var amount = payload.match(/(\d+(?:\.\d{1,2})?)/);
+                
+                var response = callTransactionAPI(amount[0]);
+                
+                var messageData = {
+            recipient: {
+              id: senderID
+            },
+            message: {
+              text: JSON.stringify(response)
+            }
+        };
+        
+        callSendAPI(messageData);
+            
                     return;
             }
             
