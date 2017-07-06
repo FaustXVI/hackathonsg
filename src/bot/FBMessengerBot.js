@@ -74,6 +74,47 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
         console.log("Received message for user" + senderID + " and page " + recipientID + " at " + timeOfMessage + " with message");
         console.log(JSON.stringify(message));
 
+        var history = {
+            "attachment": {
+                "type": "template",
+                "payload": {
+                    "template_type": "list",
+                    //"top_element_style": "compact",
+                    "elements": [{
+                            "title": "Jeremy's car",
+                            "image_url": "https://static.pexels.com/photos/24353/pexels-photo.jpg",
+                            "subtitle": "Date: 06/07/2017 13:15, Price: 2000€, Plan: FREQ_WEEKLY., Pay with: VISA 2345",
+                            "buttons": [{
+                                "title": "Share with friends",
+                                "type": "web_url",
+                                "url": "https://peterssendreceiveapp.ngrok.io/collection",
+
+                            }]
+                        },
+                        {
+                            "title": "Bonnie's bike",
+                            "image_url": "http://www.monsieurpignonmadameguidon.com/wp-content/uploads/2017/01/velo-fixie-vintage-brooks-paulette.jpg",
+                            "subtitle": "Date: 01/05/2017 19:42, Price: 120€, Plan: FREQ_WEEKLY_2., Pay with: VISA 2345",
+
+                            "buttons": [{
+                                "title": "Share with friends",
+                                "type": "web_url",
+                                "url": "https://peterssendreceiveapp.ngrok.io/shop?item=100",
+
+                            }]
+                        },
+
+
+                    ],
+                    "buttons": [{
+                        "title": "View More Records",
+                        "type": "postback",
+                        "payload": "payload"
+                    }]
+                }
+            }
+        }
+
         var messageId = message.mid;
 
         // You may get a text or attachment but not both
@@ -96,7 +137,7 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
             }
 
 
-            var friendId = messageText.match(/@.*\s/g);
+            var friendId = messageText.match(/@(?:[a-zA-Z][a-zA-Z0-9_]*)/g);
 
 
             if (messageText.toLowerCase().indexOf("buy") !== -1) {
@@ -136,7 +177,7 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
             }
 
             if (messageText.toLowerCase().indexOf("send") !== -1) {
-                var friendId = messageText.match(/@.*\s/g);
+                var friendId = messageText.match(/@(?:[a-zA-Z][a-zA-Z0-9_]*)/g);
                 var amount = messageText.match(/(\d+(?:\.\d{1,2})?)[€]/g);
                 if (!amount || !friendId) {
                     var error = {
@@ -186,6 +227,20 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
                     };
                     callSendAPI(messageData);
                 }
+            }
+
+            if (messageText.toLowerCase().indexOf("history") !== -1) {
+                var response2 = {
+                    recipient: {
+                        id: senderID
+                    },
+                    message: history
+
+
+                };
+
+                callSendAPI(response2);
+                return;
             }
         }
     }
@@ -274,9 +329,21 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
             callSendAPI(response);
             return;
         }
+        if (payload === "HISTORY_PAYLOAD") {
+            var response = {
+                recipient: {
+                    id: senderID
+                },
+                message: {
+                    text: "Type 'history' to get your payment history"
+                }
+            };
+            callSendAPI(response);
+            return;
+        }
 
         if (payload.toLowerCase().indexOf("plan") !== -1) {
-            var friendId = payload.match(/@.*\s/g);
+            var friendId = payload.match(/@(?:[a-zA-Z][a-zA-Z0-9_]*)/g);
             var amount = payload.match(/(\d+(?:\.\d{1,2})?)/g);
 
             var messageData = {
@@ -318,7 +385,7 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
         }
 
         if (payload.toLowerCase().indexOf("transaction") !== -1) {
-            var friendId = payload.match(/@.*\s/g);
+            var friendId = payload.match(/@(?:[a-zA-Z][a-zA-Z0-9_]*)/g);
             var amount = payload.match(/(\d+(?:\.\d{1,2})?)/g);
 
             var messageData = {
@@ -337,17 +404,17 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
                                 buttons: [{
                                         type: "postback",
                                         title: "Weekly",
-                                        payload: "PAYMENT_INIT of " + amount + " to " + friendId + "FREQ_WEEKLY."
+                                        payload: "PAYMENT_INIT of " + amount + " to " + friendId + " FREQ_WEEKLY."
                                     },
                                     {
                                         type: "postback",
                                         title: "Every 2 weeks",
-                                        payload: "PAYMENT_INIT of " + amount + " to " + friendId + "FREQ_WEEKLY_2."
+                                        payload: "PAYMENT_INIT of " + amount + " to " + friendId + " FREQ_WEEKLY_2."
                                     },
                                     {
                                         type: "postback",
                                         title: "Monthly",
-                                        payload: "PAYMENT_INIT of " + amount + " to " + friendId + "FREQ_MONTLY"
+                                        payload: "PAYMENT_INIT of " + amount + " to " + friendId + " FREQ_MONTLY"
                                     }
                                 ],
                             }]
@@ -360,46 +427,46 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
         }
 
         if (payload.toUpperCase().indexOf("PAYMENT_INIT") !== -1) {
-            
-            var friendId = payload.match(/@.*\s/g);
+
+            var friendId = payload.match(/@(?:[a-zA-Z][a-zA-Z0-9_]*)/g);
             var amount = payload.match(/(\d+(?:\.\d{1,2})?)/);
             var freq = payload.match(/.FREQ.*$/g)
-            
-            var messageData = {
-                        recipient: {
-                            id: senderID
 
-                        },
-                        message: {
-                            attachment: {
-                                type: "template",
-                                payload: {
-                                    template_type: "generic",
-                                    elements: [{
-                                        title: "Need your approbation",
-                                        subtitle: "I will transfer " + amount + "€ to " + friendId[0] + "'s account periodically. This amount will be debited from yours.",
-                                        buttons: [{
-                                               type: "postback",
-                                                title: "Accept",
-                                                payload: "DO_PAYMENT of " + amount + " to " + friendId + " in" + freq
-                                            },
-                                            {
-                                                type: "postback",
-                                                title: "Decline",
-                                                payload: "The payment of " + amount + " to " + friendId + " has been refused"
-                                            }
-                                        ],
-                                    }]
-                                }
-                            }
+            var messageData = {
+                recipient: {
+                    id: senderID
+
+                },
+                message: {
+                    attachment: {
+                        type: "template",
+                        payload: {
+                            template_type: "generic",
+                            elements: [{
+                                title: "Need your approbation",
+                                subtitle: "I will transfer " + amount[0] + "€ to " + friendId[0] + "'s account periodically. This amount will be debited from yours.",
+                                buttons: [{
+                                        type: "postback",
+                                        title: "Accept",
+                                        payload: "DO_PAYMENT of " + amount + " to " + friendId + " in" + freq
+                                    },
+                                    {
+                                        type: "postback",
+                                        title: "Decline",
+                                        payload: "The payment of " + amount + " to " + friendId + " has been refused"
+                                    }
+                                ],
+                            }]
                         }
-                    };
-                    callSendAPI(messageData);
-                    return;
+                    }
+                }
+            };
+            callSendAPI(messageData);
+            return;
         }
-        
+
         if (payload.toUpperCase().indexOf("DO_PAYMENT") !== -1) {
-            var friendId = payload.match(/@.*\s/g);
+            var friendId = payload.match(/@(?:[a-zA-Z][a-zA-Z0-9_]*)/g);
             var amount = payload.match(/(\d+(?:\.\d{1,2})?)/);
             var freq = payload.match(/.FREQ.*$/g)
 
@@ -491,7 +558,7 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
             callSendAPI(sharedMessage)
             return;
         }
-
+    
 
         console.log("Received postback for user " + senderID + " and page " + recipientID + "with payload '" + payload + "' " +
             "at " + timeOfPostback);
