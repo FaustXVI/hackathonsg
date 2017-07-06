@@ -164,7 +164,7 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
                                         title: "Choose your payment option",
                                         subtitle: "I reconmmend you the 'Plan' option because your balance is low.",
                                         buttons: [{
-                                               type: "postback",
+                                                type: "postback",
                                                 title: "Right now",
                                                 payload: "Make a payment now of " + amount + " to " + friendId + " ."
                                             },
@@ -192,15 +192,15 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
 
     //formats the data in the request
     function sendTextMessage(recipientId, messageText) {
-       var messageData = {
+        var messageData = {
             recipient: {
-              id: recipientId
+                id: recipientId
             },
             message: {
-              text: messageText
+                text: messageText
             }
         };
-        
+
         callSendAPI(messageData);
     }
 
@@ -230,7 +230,7 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
         }
 
     }
-    
+
     //Do transaction
     function callTransactionAPI(amount, to) {
         try {
@@ -239,10 +239,10 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
                 method: 'GET',
                 url: "https://api.backand.com/1/objects/action/items/?name=transfert&parameters={'u1':'jeremy','u2':'" + to.trim() + "','amount':" + amount + "}",
                 headers: {
-                    "Authorization":userProfile.token
+                    "Authorization": userProfile.token
                 }
             });
-            
+
             return response;
 
             console.log("Successfully sent generic message with id " + messageId + " to recipient " + recipientId);
@@ -261,158 +261,188 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
         // The 'payload' param is a developer-defined field which is set in a postback 
         // button for Structured Messages. 
         var payload = event.postback.payload;
-        
+
         if (payload === "GET_STARTED_PAYLOAD") {
-                var response = {
-                    recipient: {
-                        id: senderID
-                    },
-                    message: {
-                        text: "Hello friend! What can I do for you?"
-                    }
-                };
-                callSendAPI(response);
-                return;
+            var response = {
+                recipient: {
+                    id: senderID
+                },
+                message: {
+                    text: "Hello friend! What can I do for you?"
+                }
+            };
+            callSendAPI(response);
+            return;
         }
-        
+
         if (payload.toLowerCase().indexOf("plan") !== -1) {
-                var friendId = payload.match(/@.*\s/g);
-                var amount = payload.match(/(\d+(?:\.\d{1,2})?)/g);
-                
-                var messageData = {
-                        recipient: {
-                            id: senderID
+            var friendId = payload.match(/@.*\s/g);
+            var amount = payload.match(/(\d+(?:\.\d{1,2})?)/g);
 
-                        },
-                        message: {
-                            attachment: {
-                                type: "template",
-                                payload: {
-                                    template_type: "generic",
-                                    elements: [{
-                                        title: "Choose your plan",
-                                        subtitle: "I can propose to you the following plans.",
-                                        buttons: [{
-                                               type: "postback",
-                                                title: "2 x " + parseInt(amount/2).toFixed(2)+ "€",
-                                                payload: "Transaction of " + parseInt(amount/2).toFixed(2) + " to " + friendId + " ."
-                                            },
-                                            {
-                                                type: "postback",
-                                                title: "3 x " + parseInt(amount/3).toFixed(2) + "€",
-                                                payload: "Transaction of " + parseInt(amount/3).toFixed(2) + " to " + friendId + " ."
-                                            },
-                                            {
-                                                type: "postback",
-                                                title: "4 x " + parseInt(amount/4).toFixed(2) + "€",
-                                                payload: "Transaction of " + parseInt(amount/4).toFixed(2) + " to " + friendId + " ."
-                                            }
-                                        ],
-                                    }]
-                                }
+            var messageData = {
+                recipient: {
+                    id: senderID
+
+                },
+                message: {
+                    attachment: {
+                        type: "template",
+                        payload: {
+                            template_type: "generic",
+                            elements: [{
+                                title: "Choose your plan",
+                                subtitle: "I can propose to you the following plans.",
+                                buttons: [{
+                                        type: "postback",
+                                        title: "2 x " + parseInt(amount / 2).toFixed(2) + "€",
+                                        payload: "Transaction of " + parseInt(amount / 2).toFixed(2) + " to " + friendId + " ."
+                                    },
+                                    {
+                                        type: "postback",
+                                        title: "3 x " + parseInt(amount / 3).toFixed(2) + "€",
+                                        payload: "Transaction of " + parseInt(amount / 3).toFixed(2) + " to " + friendId + " ."
+                                    },
+                                    {
+                                        type: "postback",
+                                        title: "4 x " + parseInt(amount / 4).toFixed(2) + "€",
+                                        payload: "Transaction of " + parseInt(amount / 4).toFixed(2) + " to " + friendId + " ."
+                                    }
+                                ],
+                            }]
+                        }
+                    }
+                }
+            };
+            callSendAPI(messageData);
+            return;
+        }
+
+        if (payload.toLowerCase().indexOf("transaction") !== -1) {
+            var friendId = payload.match(/@.*\s/g);
+            var amount = payload.match(/(\d+(?:\.\d{1,2})?)/g);
+
+            var messageData = {
+                recipient: {
+                    id: senderID
+
+                },
+                message: {
+                    attachment: {
+                        type: "template",
+                        payload: {
+                            template_type: "generic",
+                            elements: [{
+                                title: "Choose your payment frequency",
+                                subtitle: "Choose the right frequency for your situation.",
+                                buttons: [{
+                                        type: "postback",
+                                        title: "Weekly",
+                                        payload: "PAYMENT_INIT of " + amount + " to " + friendId + "FREQ_WEEKLY."
+                                    },
+                                    {
+                                        type: "postback",
+                                        title: "Every 2 weeks",
+                                        payload: "PAYMENT_INIT of " + amount + " to " + friendId + "FREQ_WEEKLY_2."
+                                    },
+                                    {
+                                        type: "postback",
+                                        title: "Monthly",
+                                        payload: "PAYMENT_INIT of " + amount + " to " + friendId + "FREQ_MONTLY"
+                                    }
+                                ],
+                            }]
+                        }
+                    }
+                }
+            };
+            callSendAPI(messageData);
+            return;
+        }
+
+        if (payload.toUpperCase().indexOf("PAYMENT_INIT") !== -1) {
+            var friendId = payload.match(/@.*\s/g);
+            var amount = payload.match(/(\d+(?:\.\d{1,2})?)/);
+            var freq = payload.match(/.FREQ.*$/g)
+
+            var response = callTransactionAPI(amount[0], friendId[0]);
+
+            var messageData = {
+                recipient: {
+                    id: senderID
+                },
+                message: {
+                    attachment: {
+                        "type": "template",
+                        "payload": {
+                            "sharable": true,
+                            "template_type": "receipt",
+                            "recipient_name": friendId[0],
+                            "order_number": response.id,
+                            "currency": "EUR",
+                            "payment_method": freq[0],
+                            "elements": [{
+                                "title": response.details.description,
+                                "subtitle": response.details.to.account_id,
+                                "quantity": 1,
+                                "price": response.details.value.amount,
+                                "currency": "EUR",
+                                "image_url": "https://scontent-cdt1-1.xx.fbcdn.net/v/t1.0-9/19732268_317808045341443_8968788765722453500_n.png?oh=7db3f6b701757025025a3330156ce565&oe=5A034320"
+                            }, ],
+                            "address": {
+                                "street_1": "Les dunes",
+                                "street_2": "",
+                                "city": "VDF",
+                                "postal_code": "94000",
+                                "state": "IDF",
+                                "country": "France"
+                            },
+                            "summary": {
+                                "subtotal": response.details.value.amount,
+                                "shipping_cost": 0,
+                                "total_tax": 0,
+                                "total_cost": response.details.value.amount
                             }
                         }
-                    };
-                    callSendAPI(messageData);
-                    return;
-            }
-            
-            if (payload.toLowerCase().indexOf("transaction") !== -1) {
-                var friendId = payload.match(/@.*\s/g);
-                var amount = payload.match(/(\d+(?:\.\d{1,2})?)/g);
-                
-                var messageData = {
-                        recipient: {
-                            id: senderID
+                    }
+                }
+            };
 
-                        },
-                        message: {
-                            attachment: {
-                                type: "template",
-                                payload: {
-                                    template_type: "generic",
-                                    elements: [{
-                                        title: "Choose your payment frequency",
-                                        subtitle: "Choose the right frequency for your situation.",
-                                        buttons: [{
-                                               type: "postback",
-                                                title: "Weekly",
-                                                payload: "PAYMENT_INIT of " + amount + " to " + friendId + "FREQ_WEEKLY."
-                                            },
-                                            {
-                                                type: "postback",
-                                                title: "Every 2 weeks",
-                                                payload: "PAYMENT_INIT of " + amount + " to " + friendId + "FREQ_WEEKLY_2."
-                                            },
-                                            {
-                                                type: "postback",
-                                                title: "Monthly",
-                                                payload: "PAYMENT_INIT of " + amount + " to " + friendId + "FREQ_MONTLY"
-                                            }
-                                        ],
-                                    }]
-                                }
-                            }
-                        }
-                    };
-                    callSendAPI(messageData);
-                    return;
-            }
-            
-            if (payload.toUpperCase().indexOf("PAYMENT_INIT") !== -1) {
-                var friendId = payload.match(/@.*\s/g);
-                var amount = payload.match(/(\d+(?:\.\d{1,2})?)/);
-                
-                var response = callTransactionAPI(amount[0], friendId[0]);
-                
-                var messageData = {
-            recipient: {
-              id: senderID
-            },
-            message: {
-              text: JSON.stringify(response)
-            }
-        };
-        
-        callSendAPI(messageData);
-            
-                    return;
-            }
-            
-      
-      console.log("Received postback for user " + senderID + " and page " + recipientID + "with payload '" + payload + "' " + 
-        "at " + timeOfPostback);
-    
-      // When a postback is called, we'll send a message back to the sender to 
-      // let them know it was successful
-      sendTextMessage(senderID, payload);
+            callSendAPI(messageData);
+
+            return;
+        }
+
+
+        console.log("Received postback for user " + senderID + " and page " + recipientID + "with payload '" + payload + "' " +
+            "at " + timeOfPostback);
+
+        // When a postback is called, we'll send a message back to the sender to 
+        // let them know it was successful
+        sendTextMessage(senderID, payload);
     }
-    
+
     function sendMenuMessage() {
         var messageData = {
-            "persistent_menu":[
-                {
-                    "locale":"default",
-                    "composer_input_disabled":false,
-                    "call_to_actions":[
-                        {
-                            "title":"Payments History",
-                            "type":"postback",
-                            "payload":"HISTORY_PAYLOAD"
-                        },
-                        {
-                            "title":"Parameters",
-                            "type":"postback",
-                            "payload":"PARAMETERS_INFO_PAYLOAD"
-                        }
-                    ]
-                }
-            ]
+            "persistent_menu": [{
+                "locale": "default",
+                "composer_input_disabled": false,
+                "call_to_actions": [{
+                        "title": "Payments History",
+                        "type": "postback",
+                        "payload": "HISTORY_PAYLOAD"
+                    },
+                    {
+                        "title": "Parameters",
+                        "type": "postback",
+                        "payload": "PARAMETERS_INFO_PAYLOAD"
+                    }
+                ]
+            }]
         };
 
         callSendParameterAPI(messageData);
     }
-    
+
     function sendGetStartedButton() {
         var messageData = {
             "get_started": {
@@ -421,22 +451,20 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
         };
         callSendParameterAPI(messageData);
     }
-    
-function sendSetWelcomeMessage(){
+
+    function sendSetWelcomeMessage() {
         var messageData = {
-            "greeting":[
-                {
-                    "locale":"default",
-                    "text":"Bienvenue sur l'application d'échange de money et micro crédits entre amis!"
-                }, {
-                    "locale":"en_US",
-                    "text":"Timeless apparel for the masses."
-                }
-            ]
+            "greeting": [{
+                "locale": "default",
+                "text": "Bienvenue sur l'application d'échange de money et micro crédits entre amis!"
+            }, {
+                "locale": "en_US",
+                "text": "Timeless apparel for the masses."
+            }]
         };
         callSendParameterAPI(messageData);
     }
-    
+
     function callSendParameterAPI(messageData) {
         try {
 
