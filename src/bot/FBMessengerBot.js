@@ -11,9 +11,80 @@
 function backandCallback(userInput, dbRow, parameters, userProfile) {
     // write your code here
 
-    var PAGE_ACCESS_TOKEN = 'EAAKXJg8OqAIBAEQFNIRti2Cyb2zwDL2Sm5ZAjYlW2mx2YnaLggY5tLpZBJJziiPDZCswPc6VZCa3hl3akXztAHNdJNyDhusJZBDDvtvx5imIZAayhyJpgsCCHDGIc1mh89sE1NFAZBB6ZC1ZClKRIN84XmAIrrAKtyZCLvETdbv8vB6AZDZD';
+    var PAGE_ACCESS_TOKEN = 'EAAKXJg8OqAIBAAowbyEx6IusozpNMOhZBA7P6QnrdvBKidR0p0ZB1ZCQOp4xmOzEta0zThOchTp1ZBjqByHI5A6ZCi8PS48IVSS4XWncw7tvGysbAQw3Y4DYbD8LaBvjvUjZAxNKxR2rIfV6R7g5WfzdwZAULmyATzIZCW7x25XchcpWN0f8WxQy';
 
-    console.log({ "FBMessengerBot start": request });
+    var bankUrl = 'https://socgen2-k-api.openbankproject.com';
+    var bankUrlVersioned = bankUrl + '/obp/v3.0.0';
+    var consumerId = 'nedlqyjjmzjpv1w1hkfbksei1forisndh3p1et2w';
+    var credentialsOf = function(name) {
+        return {
+            '@jeremy': {
+                'login': "1000203892",
+                'password': "123456"
+            },
+            '@xavier': {
+                'login': "1000203894",
+                'password': "123456"
+            }
+        }[name];
+    };
+
+    function getTokenForUser(login, password) {
+        return $http({
+            method: "POST",
+            url: bankUrl + '/my/logins/direct',
+            params: {
+                "access_token": PAGE_ACCESS_TOKEN
+            },
+            headers: {
+                'content-type': 'application/json',
+                'Authorization': 'DirectLogin' +
+                    ' username="' + login + '",password="' + password + '",consumer_key="' + consumerId + '"'
+            }
+        });
+    };
+
+    function headersFor(token) {
+        return {
+            'Content-Type': 'application/json',
+            'Authorization': 'DirectLogin token="' + token + '"'
+        }
+    };
+
+    function accountsFor(name) {
+        var credentials = credentialsOf(name);
+        var token = getTokenForUser(credentials.login, credentials.password);
+        return $http({
+            method: "GET",
+            url: bankUrlVersioned + '/my/accounts',
+            headers: headersFor(token)
+        });
+    };
+
+    function transferMoney(transfer) {
+        var accounts = accountsFor(transfer.to);
+        var account = accounts[0];
+        return $http({
+            method: "POST",
+            url: bankUrlVersioned + '/banks/00100/accounts/ACCOUNT_ID/VIEW_ID/transaction-request-types/TRANSACTION_REQUEST_TYPE/transaction-requests',
+            data: {
+                "to": {
+                    "bank_id": account.id,
+                    "account_id": account.bank_id
+                },
+                "value": {
+                    "currency": "EUR",
+                    "amount": "10"
+                },
+                "description": "Good"
+            },
+            headers: headersFor(token)
+        });
+    };
+
+    console.log({
+        "FBMessengerBot start": request
+    });
 
     //GET method is only to verify the webhook when adding it from FB UI
     if (request.method == "GET") {
@@ -33,6 +104,8 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
 
         var data = request.body;
         if (data.object == 'page') {
+            sendSetWelcomeMessage();
+            sendGetStartedButton();
 
             // Iterate over each entry
             // There may be multiple if batched
@@ -79,10 +152,38 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
 
         if (messageText) {
 
+            if (messageText.toLowerCase() === "hello" || messageText.toLowerCase() === "hi") {
+                var response1 = {
+                    recipient: {
+                        id: senderID
+                    },
+                    message: {
+                        text: "Hello friend! What can I do for you?"
+                    }
+                };
+                callSendAPI(response1);
+                return;
+            }
+
 
             var friendId = messageText.match(/@.*\s/g);
 
+
             if (messageText.toLowerCase().indexOf("buy") !== -1) {
+                if (!friendId) {
+                    var error = {
+                        recipient: {
+                            id: senderID
+                        },
+                        message: {
+                            text: "Please repeat your request with your friend ID ?"
+
+                        }
+                    };
+                    callSendAPI(error);
+                    return;
+                }
+
                 var response1 = {
                     recipient: {
                         id: senderID
@@ -91,12 +192,13 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
                         text: "So you wanna buy something from " + friendId + "!"
                     }
                 };
+
                 var response2 = {
                     recipient: {
                         id: senderID
                     },
                     message: {
-                        text: "How much do you want me to send to " + friendId + "account ?"
+                        text: "How much do you want me to send to " + friendId + "'s account ?"
                     }
                 };
                 callSendAPI(response1);
@@ -104,81 +206,67 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
             }
 
             if (messageText.toLowerCase().indexOf("send") !== -1) {
+                var friendId = messageText.match(/@.*\s/g);
                 var amount = messageText.match(/(\d+(?:\.\d{1,2})?)[€]/g);
-                if (!amount) {
+                if (!amount || !friendId) {
                     var error = {
                         recipient: {
                             id: senderID
                         },
                         message: {
-                            text: "Can you give me the amount to send please ?"
+                            text: "Can you give me the amount to send please ? You should also add the ID of your friend for validation"
 
                         }
                     };
                     callSendAPI(error);
                 } else {
-                    var response1 = {
+                    //var accounts = accountsFor(friendId);
+                    var messageData = {
                         recipient: {
                             id: senderID
+
                         },
                         message: {
-                            text: "I will transfer " + amount + " to his account. This amount will be debited from your account."
+                            attachment: {
+                                type: "template",
+                                payload: {
+                                    template_type: "generic",
+                                    elements: [{
+                                        title: "Need your approbation",
+                                        subtitle: "I will transfer " + amount + " to " + friendId + "'s account. This amount will be debited from yours.",
+                                        buttons: [{
+                                               type: "postback",
+                                                title: "Accept",
+                                                payload: "The payment of " + amount + " to " + friendId + " is done."
+                                            },
+                                            {
+                                                type: "postback",
+                                                title: "Decline",
+                                                payload: "The payment of " + amount + " to " + friendId + " has been refused"
+                                            }
+                                        ],
+                                    }]
+                                }
+                            }
                         }
                     };
-                    var response2 = {
-                        recipient: {
-                            id: senderID
-                        },
-                        message: {
-                            text: "Do you agree ?"
-                        }
-                    };
-                    callSendAPI(response1);
-                    callSendAPI(response2);
+                    callSendAPI(messageData);
                 }
             }
-
-            // If we receive a text message, check to see if it matches any special
-            // keywords and send back the corresponding example. Otherwise, just echo
-            // the text we received.
-            /*switch (messageText) {
-                  
-                  case 'image':
-                    //sendImageMessage(senderID);
-                    break;
-                
-                  case 'button':
-                    //sendButtonMessage(senderID);
-                    break;
-                
-                  case 'backand':
-                  case 'Backand':      
-                    sendGenericMessage(senderID);
-                    break;
-                
-                  case 'receipt':
-                    //sendReceiptMessage(senderID);
-                    break;
-                
-                  default:
-                    sendTextMessage(senderID, messageText);
-                }*/
-        } else if (messageAttachments) {
-            sendTextMessage(senderID, "Message with attachment received");
         }
     }
 
     //formats the data in the request
     function sendTextMessage(recipientId, messageText) {
-        var messageData = {
+       var messageData = {
             recipient: {
-                id: recipientId
+              id: recipientId
             },
             message: {
-                text: "Back& bot says: " + messageText
+              text: messageText
             }
         };
-
+        
         callSendAPI(messageData);
     }
 
@@ -193,7 +281,9 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
                     "access_token": PAGE_ACCESS_TOKEN
                 },
                 data: messageData,
-                headers: { "Content-Type": "application/json" }
+                headers: {
+                    "Content-Type": "application/json"
+                }
             });
 
             var recipientId = response.recipient_id;
@@ -207,54 +297,6 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
 
     }
 
-    //Sends back a Structured Message with a generic template.
-    //if you send the message 'backand'
-    function sendGenericMessage(recipientId) {
-        var messageData = {
-            recipient: {
-                id: recipientId
-            },
-            message: {
-                attachment: {
-                    type: "template",
-                    payload: {
-                        template_type: "generic",
-                        elements: [{
-                            title: "Messanger BAAS",
-                            subtitle: "Backand as a service for Facebook Messanger",
-                            item_url: "https://www.backand.com/features/",
-                            image_url: "https://www.backand.com/wp-content/uploads/2016/01/endless.gif",
-                            buttons: [{
-                                type: "web_url",
-                                url: "https://www.backand.com/features/",
-                                title: "Open Web URL"
-                            }, {
-                                type: "postback",
-                                title: "Call Postback",
-                                payload: "Payload for first bubble",
-                            }],
-                        }, {
-                            title: "3rd Party Integrations",
-                            subtitle: "Connect your Bot to 3rd party services and applications",
-                            item_url: "https://www.backand.com/integrations/",
-                            image_url: "https://www.backand.com/wp-content/uploads/2016/01/3.png",
-                            buttons: [{
-                                type: "web_url",
-                                url: "https://www.backand.com/integrations/",
-                                title: "Open Web URL"
-                            }, {
-                                type: "postback",
-                                title: "Call Postback",
-                                payload: "Payload for second bubble",
-                            }]
-                        }]
-                    }
-                }
-            }
-        };
-        callSendAPI(messageData);
-    }
-
     function receivedPostback(event) {
         var senderID = event.sender.id;
         var recipientID = event.recipient.id;
@@ -263,12 +305,100 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
         // The 'payload' param is a developer-defined field which is set in a postback 
         // button for Structured Messages. 
         var payload = event.postback.payload;
+        
+        if (payload === "GET_STARTED_PAYLOAD") {
+                var response = {
+                    recipient: {
+                        id: senderID
+                    },
+                    message: {
+                        text: "Hello friend! What can I do for you?"
+                    }
+                };
+                callSendAPI(response);
+                return;
+            }
+      
+      console.log("Received postback for user " + senderID + " and page " + recipientID + "with payload '" + payload + "' " + 
+        "at " + timeOfPostback);
+    
+      // When a postback is called, we'll send a message back to the sender to 
+      // let them know it was successful
+      sendTextMessage(senderID, payload);
+    }
+    
+    function sendMenuMessage() {
+        var messageData = {
+            "persistent_menu":[
+                {
+                    "locale":"default",
+                    "composer_input_disabled":false,
+                    "call_to_actions":[
+                        {
+                            "title":"Payments History",
+                            "type":"postback",
+                            "payload":"HISTORY_PAYLOAD"
+                        },
+                        {
+                            "title":"Parameters",
+                            "type":"postback",
+                            "payload":"PARAMETERS_INFO_PAYLOAD"
+                        }
+                    ]
+                }
+            ]
+        };
 
-        console.log("Received postback for user " + senderID + " and page " + recipientID + "with payload '" + payload + "' " +
-            "at " + timeOfPostback);
+        callSendParameterAPI(messageData);
+    }
+    
+    function sendGetStartedButton() {
+        var messageData = {
+            "get_started": {
+                "payload": "GET_STARTED_PAYLOAD"
+            }
+        };
+        callSendParameterAPI(messageData);
+    }
+    
+function sendSetWelcomeMessage(){
+        var messageData = {
+            "greeting":[
+                {
+                    "locale":"default",
+                    "text":"Bienvenue sur l'application d'échange de money et micro crédits entre amis!"
+                }, {
+                    "locale":"en_US",
+                    "text":"Timeless apparel for the masses."
+                }
+            ]
+        };
+        callSendParameterAPI(messageData);
+    }
+    
+    function callSendParameterAPI(messageData) {
+        try {
 
-        // When a postback is called, we'll send a message back to the sender to 
-        // let them know it was successful
-        sendTextMessage(senderID, "Postback called");
+            var response = $http({
+                method: "POST",
+                url: "https://graph.facebook.com/v2.6/me/messenger_profile",
+                params: {
+                    "access_token": PAGE_ACCESS_TOKEN
+                },
+                data: messageData,
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
+
+            var recipientId = response.recipient_id;
+            var messageId = response.message_id;
+
+            console.log("Successfully sent generic message with id " + messageId + " to recipient " + recipientId);
+        } catch (err) {
+            console.error("Unable to send message.");
+            console.error(err);
+        }
+
     }
 }
