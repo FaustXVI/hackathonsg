@@ -122,7 +122,9 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
         var messageAttachments = message.attachments;
 
         if (messageText) {
-
+            
+            var friendId = messageText.match(/@(?:[a-zA-Z][a-zA-Z0-9_]*)/g);
+            
             if (messageText.toLowerCase() === "hello" || messageText.toLowerCase() === "hi") {
                 var response1 = {
                     recipient: {
@@ -135,12 +137,7 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
                 callSendAPI(response1);
                 return;
             }
-
-
-            var friendId = messageText.match(/@(?:[a-zA-Z][a-zA-Z0-9_]*)/g);
-
-
-            if (messageText.toLowerCase().indexOf("buy") !== -1) {
+            else if (messageText.toLowerCase().indexOf("buy") !== -1) {
                 if (!friendId) {
                     var error = {
                         recipient: {
@@ -175,8 +172,7 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
                 callSendAPI(response1);
                 callSendAPI(response2);
             }
-
-            if (messageText.toLowerCase().indexOf("send") !== -1) {
+            else if (messageText.toLowerCase().indexOf("send") !== -1) {
                 var friendId = messageText.match(/@(?:[a-zA-Z][a-zA-Z0-9_]*)/g);
                 var amount = messageText.match(/(\d+(?:\.\d{1,2})?)[€]/g);
                 if (!amount || !friendId) {
@@ -190,6 +186,7 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
                         }
                     };
                     callSendAPI(error);
+                    return;
                 } else {
                     var messageData = {
                         recipient: {
@@ -226,10 +223,10 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
                         }
                     };
                     callSendAPI(messageData);
+                    return;
                 }
             }
-
-            if (messageText.toLowerCase().indexOf("history") !== -1) {
+            else if (messageText.toLowerCase().indexOf("history") !== -1) {
                 var response2 = {
                     recipient: {
                         id: senderID
@@ -242,6 +239,11 @@ function backandCallback(userInput, dbRow, parameters, userProfile) {
                 callSendAPI(response2);
                 return;
             }
+            else {
+                sendTextMessage(senderID, "I am too young to understand everything. You can talk to me about your projects (eg 'I want to buy @kad's bike) or ask me to transfer some money from your OBP account to a friend (For example: 'send @kad 150€')");
+                return;
+            }
+            
         }
     }
 
